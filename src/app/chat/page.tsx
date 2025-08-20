@@ -236,13 +236,37 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto">
+    <div className="flex flex-col md:flex-row h-screen">
+      {/* Mobile header */}
+      <div className="md:hidden bg-white border-b p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            <h1 className="text-lg font-semibold">
+              {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'Chat' : 'AI Assistant'}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <InfoModal onPromptSelect={handlePromptSelect} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => signOut()}
+              className="h-8"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <div className="hidden md:block md:w-64 lg:w-80 bg-gray-50 border-r p-4 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Chat History</h2>
-          <Button size="sm" onClick={createNewChat} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New
+          <h2 className="text-base lg:text-lg font-semibold">Chat History</h2>
+          <Button size="sm" onClick={createNewChat} className="flex items-center gap-1 lg:gap-2 text-xs lg:text-sm">
+            <Plus className="h-3 w-3 lg:h-4 lg:w-4" />
+            <span className="hidden lg:inline">New</span>
           </Button>
         </div>
         
@@ -266,21 +290,22 @@ export default function ChatPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm truncate">{chat.title || 'Untitled Chat'}</h3>
+                    <h3 className="font-medium text-xs lg:text-sm truncate">{chat.title || 'Untitled Chat'}</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {(chat._count?.messages ?? 0)} messages • {chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : 'No date'}
+                      <span className="lg:hidden">{(chat._count?.messages ?? 0)} msgs</span>
+                      <span className="hidden lg:inline">{(chat._count?.messages ?? 0)} messages • {chat.updatedAt ? new Date(chat.updatedAt).toLocaleDateString() : 'No date'}</span>
                     </p>
                   </div>
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 ml-2"
+                    className="opacity-0 group-hover:opacity-100 h-5 w-5 lg:h-6 lg:w-6 p-0 ml-1 lg:ml-2"
                     onClick={(e) => {
                       e.stopPropagation()
                       deleteChat(chat.id)
                     }}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-2 w-2 lg:h-3 lg:w-3" />
                   </Button>
                 </div>
               </div>
@@ -302,11 +327,12 @@ export default function ChatPage() {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="border-b p-4 bg-white">
+        {/* Desktop header */}
+        <div className="hidden md:block border-b p-4 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
-              <h1 className="text-xl font-semibold">
+              <h1 className="text-lg lg:text-xl font-semibold">
                 {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'Chat' : 'AI Assistant'}
               </h1>
             </div>
@@ -319,22 +345,22 @@ export default function ChatPage() {
                 className="h-8"
               >
                 <LogOut className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span className="hidden lg:inline">Sign Out</span>
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+        <div className="flex-1 p-2 sm:p-4 overflow-y-auto bg-gray-50">
           {messages.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to AI Assistant!</h3>
-              <p className="text-gray-500 mb-4">Start a conversation by typing a message below.</p>
-              <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+            <div className="text-center py-8 sm:py-12 px-4">
+              <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Welcome to AI Assistant!</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-4">Start a conversation by typing a message below.</p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm text-blue-600">
                 <span>💡 Need examples? Click the</span>
-                <div className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <div className="inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 border border-gray-300 rounded bg-white">
+                  <svg className="w-2 h-2 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                   </svg>
                 </div>
@@ -342,16 +368,16 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="space-y-3 sm:space-y-4 max-w-4xl mx-auto">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-lg ${
+                  <div className={`max-w-[85%] sm:max-w-xs lg:max-w-md xl:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-lg ${
                     msg.role === 'user' 
                       ? 'bg-blue-500 text-white' 
                       : 'bg-white border shadow-sm'
                   }`}>
-                    <pre className="whitespace-pre-wrap font-sans text-sm">{msg.content}</pre>
-                    <div className={`text-xs mt-2 ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
+                    <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">{msg.content}</pre>
+                    <div className={`text-xs mt-1 sm:mt-2 ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'}`}>
                       {new Date(msg.createdAt).toLocaleTimeString()}
                     </div>
                   </div>
@@ -359,10 +385,10 @@ export default function ChatPage() {
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-white border shadow-sm px-4 py-3 rounded-lg">
+                  <div className="bg-white border shadow-sm px-3 sm:px-4 py-2 sm:py-3 rounded-lg">
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                      <span className="text-sm">AI is thinking...</span>
+                      <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-gray-600 mr-2"></div>
+                      <span className="text-xs sm:text-sm">AI is thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -371,9 +397,17 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="border-t p-4 bg-white">
+        <div className="border-t p-2 sm:p-4 bg-white">
           <div className="max-w-4xl mx-auto">
-            <div className="flex gap-3">
+            {/* Mobile: New Chat button */}
+            <div className="md:hidden mb-3">
+              <Button size="sm" onClick={createNewChat} className="w-full flex items-center justify-center gap-2 mb-2">
+                <Plus className="h-4 w-4" />
+                New Chat
+              </Button>
+            </div>
+            
+            <div className="flex gap-2 sm:gap-3">
               <input
                 ref={inputRef}
                 type="text"
@@ -381,15 +415,14 @@ export default function ChatPage() {
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                 placeholder="Ask about weather, F1 races, or stock prices..."
-                className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={loading}
               />
-              <Button onClick={sendMessage} disabled={loading || !message.trim()} className="px-6">
-                Send
+              <Button onClick={sendMessage} disabled={loading || !message.trim()} className="px-3 sm:px-6 text-sm sm:text-base">
+                <span className="hidden sm:inline">Send</span>
+                <span className="sm:hidden">→</span>
               </Button>
             </div>
-            
-
           </div>
         </div>
       </div>

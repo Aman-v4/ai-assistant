@@ -35,19 +35,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Animated background elements - responsive */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute -bottom-20 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-10 left-4 sm:top-20 sm:left-20 w-48 h-48 sm:w-72 sm:h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-32 right-4 sm:top-40 sm:right-20 w-64 h-64 sm:w-96 sm:h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
+        <div className="absolute -bottom-10 left-8 sm:-bottom-20 sm:left-40 w-56 h-56 sm:w-80 sm:h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
       </div>
 
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDUpIiBzdHJva2Utd2lkdGg9IjEiLz4KICAgIDwvcGF0dGVybj4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIgLz4KPC9zdmc+')] opacity-30"></div>
 
-      <div className="relative z-10 flex min-h-screen">
+      <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
         {/* Left side - Brand and features */}
-        <div className="hidden lg:flex lg:flex-1 flex-col justify-center px-16 text-white">
+        <div className="hidden lg:flex lg:flex-1 flex-col justify-center px-8 xl:px-16 text-white">
           <div className="max-w-lg">
             <div className="flex items-center mb-8">
               <div className="p-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl mr-4">
@@ -58,14 +58,14 @@ export default function Home() {
               </h1>
             </div>
             
-            <h2 className="text-5xl font-bold mb-6 leading-tight">
+            <h2 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
               Your intelligent companion for{' '}
               <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 everything
               </span>
             </h2>
             
-            <p className="text-xl text-slate-300 mb-12 leading-relaxed">
+            <p className="text-lg xl:text-xl text-slate-300 mb-12 leading-relaxed">
               Experience the power of AI with real-time data access, intelligent conversations, 
               and seamless integration with your workflow.
             </p>
@@ -106,68 +106,68 @@ export default function Home() {
         </div>
 
         {/* Right side - Login form */}
-        <div className="flex-1 flex items-center justify-center px-8 lg:px-16">
-          <div className="w-full max-w-lg">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-16 py-8 lg:py-0">
+          <div className="w-full max-w-sm sm:max-w-md lg:max-w-lg">
             <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl">
-              <CardHeader className="text-center pb-8">
+              <CardHeader className="text-center pb-6 sm:pb-8">
                 <div className="flex justify-center mb-4 lg:hidden">
                   <div className="p-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl">
-                    <Bot className="h-8 w-8 text-white" />
+                    <Bot className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                   </div>
                 </div>
-                <CardTitle className="text-3xl lg:text-4xl font-bold text-white mb-2">
+                <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
                   Welcome Back
                 </CardTitle>
-                <CardDescription className="text-slate-300 text-lg">
+                <CardDescription className="text-slate-300 text-base sm:text-lg px-2">
                   Sign in to continue your AI-powered journey
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="space-y-6 px-8 pb-8">
+              <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-8 pb-6 sm:pb-8">
                 <Button
                   variant="outline"
-                  className="w-full h-14 text-lg font-medium bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30 text-white transition-all duration-200 backdrop-blur-sm"
                   onClick={() => signIn('google')}
                 >
-                  <Chrome className="h-5 w-5 mr-3" />
+                  <Chrome className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
                   Continue with Google
                 </Button>
                 
                 <Button
                   variant="outline"
-                  className="w-full h-14 text-lg font-medium bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-white/10 hover:bg-white/20 border-white/20 hover:border-white/30 text-white transition-all duration-200 backdrop-blur-sm"
                   onClick={() => signIn('github')}
                 >
-                  <Github className="h-5 w-5 mr-3" />
+                  <Github className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3" />
                   Continue with GitHub
                 </Button>
 
-                <div className="flex items-center justify-center mt-8">
-                  <div className="flex items-center text-slate-400 text-sm">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Join thousands of users already using AI Assistant
+                <div className="flex items-center justify-center mt-6 sm:mt-8">
+                  <div className="flex items-center text-slate-400 text-xs sm:text-sm text-center">
+                    <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                    <span>Join thousands of users already using AI Assistant</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Mobile features - shown only on small screens */}
-            <div className="lg:hidden mt-12 space-y-6">
+            <div className="lg:hidden mt-8 sm:mt-12 space-y-4 sm:space-y-6 px-2">
               <div className="text-center text-white">
-                <h3 className="text-2xl font-bold mb-6">Why Choose AI Assistant?</h3>
+                <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Why Choose AI Assistant?</h3>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="text-center p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-                  <MessageSquare className="h-8 w-8 text-purple-400 mx-auto mb-3" />
-                  <h4 className="font-semibold text-white mb-2">Smart Chat</h4>
-                  <p className="text-slate-400 text-sm">Natural conversations</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="text-center p-4 sm:p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
+                  <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-purple-400 mx-auto mb-2 sm:mb-3" />
+                  <h4 className="font-semibold text-white mb-1 sm:mb-2 text-sm sm:text-base">Smart Chat</h4>
+                  <p className="text-slate-400 text-xs sm:text-sm">Natural conversations</p>
                 </div>
                 
-                <div className="text-center p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-                  <Zap className="h-8 w-8 text-cyan-400 mx-auto mb-3" />
-                  <h4 className="font-semibold text-white mb-2">Real-time</h4>
-                  <p className="text-slate-400 text-sm">Live data access</p>
+                <div className="text-center p-4 sm:p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
+                  <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-400 mx-auto mb-2 sm:mb-3" />
+                  <h4 className="font-semibold text-white mb-1 sm:mb-2 text-sm sm:text-base">Real-time</h4>
+                  <p className="text-slate-400 text-xs sm:text-sm">Live data access</p>
                 </div>
               </div>
             </div>

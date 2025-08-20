@@ -67,3 +67,30 @@
     animation-delay: 4s;
   }
 }
+
+/* Mobile-first responsive improvements */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
+
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
