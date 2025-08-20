@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 
 async function getWeather(location: string) {
   try {
@@ -424,7 +425,7 @@ async function getStockPrice(symbol: string) {
       console.log('Yahoo Finance failed:', yahooError)
     }
     
-    throw new Error(`No valid stock data found for ${cleanSymbol}`)
+    throw new Error(`No valid stock data found for ${symbol}`)
     
   } catch (error) {
     console.error('All stock APIs failed:', error)
@@ -436,47 +437,96 @@ async function getStockPrice(symbol: string) {
 
 async function getF1NextRace() {
   try {
-    const currentYear = new Date().getFullYear()
-    const response = await fetch(`https://ergast.com/api/f1/${currentYear}.json`)
+    console.log('Fetching F1 race data...')
     
-    if (!response.ok) {
-      throw new Error('F1 data not available')
+    // Try OpenF1 API first (free and currently working)
+    try {
+      const sessionsResponse = await fetch('https://api.openf1.org/v1/sessions?session_type=Race&year=2024', {
+        headers: {
+          'User-Agent': 'AI-Assistant/1.0'
+        }
+      })
+      
+      if (sessionsResponse.ok) {
+        const sessions = await sessionsResponse.json()
+        console.log('OpenF1 response received')
+        
+        if (sessions && sessions.length > 0) {
+          const now = new Date()
+          
+          // Find the next race or the latest one
+          const nextSession = sessions.find((session: any) => {
+            const sessionDate = new Date(session.date_start)
+            return sessionDate > now
+          }) || sessions[sessions.length - 1]
+          
+          if (nextSession) {
+            const meetingResponse = await fetch(`https://api.openf1.org/v1/meetings?meeting_key=${nextSession.meeting_key}`)
+            const meetings = await meetingResponse.json()
+            const meeting = meetings[0]
+            
+            return {
+              raceName: meeting?.meeting_name || 'Formula 1 Race',
+              circuitName: meeting?.circuit_short_name || 'Circuit',
+              date: nextSession.date_start?.split('T')[0] || 'TBA',
+              time: nextSession.date_start ? new Date(nextSession.date_start).toLocaleTimeString('en-US', { timeZone: 'UTC' }) : 'TBA',
+              country: meeting?.country_name || 'TBA',
+              locality: meeting?.location || meeting?.circuit_short_name || 'TBA',
+            }
+          }
+        }
+      }
+    } catch (openF1Error) {
+      console.log('OpenF1 API failed:', openF1Error)
     }
     
-    const data = await response.json()
-    const races = data.MRData.RaceTable.Races
-    const now = new Date()
-    
-    // Find the next race
-    interface Race {
-      raceName: string;
-      date: string;
-      time?: string;
-      Circuit: {
-        circuitName: string;
-        Location: {
-          country: string;
-          locality: string;
-        };
-      };
+    // Fallback: Try F1 Live API
+    try {
+      const f1LiveResponse = await fetch('https://api.jolpi.ca/ergast/f1/current.json', {
+        headers: {
+          'User-Agent': 'AI-Assistant/1.0'
+        }
+      })
+      
+      if (f1LiveResponse.ok) {
+        const data = await f1LiveResponse.json()
+        const races = data.MRData?.RaceTable?.Races
+        
+        if (races && races.length > 0) {
+          const now = new Date()
+          
+          const nextRace = races.find((race: any) => {
+            const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`)
+            return raceDate > now
+          }) || races[races.length - 1]
+          
+          return {
+            raceName: nextRace.raceName,
+            circuitName: nextRace.Circuit.circuitName,
+            date: nextRace.date,
+            time: nextRace.time || 'TBA',
+            country: nextRace.Circuit.Location.country,
+            locality: nextRace.Circuit.Location.locality,
+          }
+        }
+      }
+    } catch (jolpicaError) {
+      console.log('Jolpica API failed:', jolpicaError)
     }
     
-    const nextRace = races.find((race: Race) => {
-      const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`)
-      return raceDate > now
-    }) || races[races.length - 1]
-    
+    // Last resort: Return static info about current F1 season
     return {
-      raceName: nextRace.raceName,
-      circuitName: nextRace.Circuit.circuitName,
-      date: nextRace.date,
-      time: nextRace.time || 'TBA',
-      country: nextRace.Circuit.Location.country,
-      locality: nextRace.Circuit.Location.locality,
+      raceName: 'Formula 1 Race Weekend',
+      circuitName: 'Check F1 Official Website',
+      date: 'TBA',
+      time: 'TBA',
+      country: 'Various',
+      locality: 'Visit formula1.com for latest schedule',
     }
+    
   } catch (error) {
-    console.error('F1 API error:', error)
-    return { error: 'Failed to get F1 race information' }
+    console.error('All F1 APIs failed:', error)
+    return { error: 'F1 race information temporarily unavailable. The old Ergast API was shut down. Please check formula1.com for the latest race schedule.' }
   }
 }
 
@@ -501,8 +551,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message } = await req.json()
-    console.log('Received message:', message)
+    const { message, chatId } = await req.json()
+    console.log('Received message:', message, 'Chat ID:', chatId)
+    
+    const userId = (session.user as any).id
+    let currentChatId = chatId
+
+    // Create new chat if no chatId provided
+    if (!currentChatId) {
+      const newChat = await prisma.chat.create({
+        data: {
+          userId: userId,
+          title: message.slice(0, 50) + (message.length > 50 ? '...' : ''), // Use first 50 chars as title
+        }
+      })
+      currentChatId = newChat.id
+      console.log('Created new chat:', currentChatId)
+    }
+
+    // Save user message
+    const userMessage = await prisma.message.create({
+      data: {
+        chatId: currentChatId,
+        role: 'user',
+        content: message,
+      }
+    })
+    console.log('Saved user message:', userMessage.id)
 
     // Check if message is asking for weather
     if (message.toLowerCase().includes('weather')) {
@@ -516,13 +591,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: weatherData.error })
       }
       
-      return NextResponse.json({
-        message: `🌤️ **Weather in ${weatherData.location}:**\n` +
+      const responseText = `🌤️ **Weather in ${weatherData.location}:**\n` +
                 `🌡️ Temperature: ${weatherData.temperature}°C\n` +
                 `☁️ Conditions: ${weatherData.description}\n` +
                 `💧 Humidity: ${weatherData.humidity}%\n` +
                 `💨 Wind Speed: ${weatherData.windSpeed} m/s\n` +
                 `👁️ Visibility: ${weatherData.visibility} km`
+      
+      // Save assistant response
+      await prisma.message.create({
+        data: {
+          chatId: currentChatId,
+          role: 'assistant',
+          content: responseText,
+          toolCalls: { type: 'weather', data: weatherData }
+        }
+      })
+
+      return NextResponse.json({
+        message: responseText,
+        chatId: currentChatId
       })
     }
     
@@ -535,13 +623,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: f1Data.error })
       }
       
-      return NextResponse.json({
-        message: `🏎️ **Next Formula 1 Race:**\n` +
+      const responseText = `🏎️ **Next Formula 1 Race:**\n` +
                 `🏁 **Race:** ${f1Data.raceName}\n` +
                 `🏟️ **Circuit:** ${f1Data.circuitName}\n` +
                 `📍 **Location:** ${f1Data.locality}, ${f1Data.country}\n` +
                 `📅 **Date:** ${new Date(f1Data.date).toLocaleDateString()}\n` +
                 `⏰ **Time:** ${f1Data.time === 'TBA' ? 'TBA' : f1Data.time}`
+      
+      // Save assistant response
+      await prisma.message.create({
+        data: {
+          chatId: currentChatId,
+          role: 'assistant',
+          content: responseText,
+          toolCalls: { type: 'f1', data: f1Data }
+        }
+      })
+
+      return NextResponse.json({
+        message: responseText,
+        chatId: currentChatId
       })
     }
     
@@ -583,21 +684,46 @@ export async function POST(req: NextRequest) {
       const changeText = (stockData.change || 0) >= 0 ? '+' : ''
       const changeColor = (stockData.change || 0) >= 0 ? '🟢' : '🔴'
       
-      return NextResponse.json({
-        message: `📈 **${stockData.name} (${stockData.symbol})**\n` +
+      const responseText = `📈 **${stockData.name} (${stockData.symbol})**\n` +
                 `💰 **Current Price:** ${stockData.currency}${stockData.price}\n` +
                 `${changeColor} **Change:** ${changeText}${stockData.change} (${changeText}${stockData.changePercent}%)\n` +
                 `🕒 **Last Updated:** ${new Date().toLocaleString()}`
+      
+      // Save assistant response
+      await prisma.message.create({
+        data: {
+          chatId: currentChatId,
+          role: 'assistant',
+          content: responseText,
+          toolCalls: { type: 'stock', data: stockData }
+        }
+      })
+
+      return NextResponse.json({
+        message: responseText,
+        chatId: currentChatId
       })
     }
 
     // Default response for other messages
-    return NextResponse.json({
-      message: "I can help you with:\n" +
+    const defaultResponse = "I can help you with:\n" +
                "🌤️ **Weather** - try 'What's the weather in London?'\n" +
                "📈 **Stock prices** - try 'What's Microsoft stock price?'\n" +
                "🏎️ **F1 races** - try 'When is the next F1 race?'\n" +
                "\nWhat would you like to know?"
+    
+    // Save assistant response
+    await prisma.message.create({
+      data: {
+        chatId: currentChatId,
+        role: 'assistant',
+        content: defaultResponse,
+      }
+    })
+
+    return NextResponse.json({
+      message: defaultResponse,
+      chatId: currentChatId
     })
 
   } catch (error) {
