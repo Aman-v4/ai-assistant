@@ -41,7 +41,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Ask: " What's the weather in New York?"
+                Ask: "What's the weather in New York?"
               </p>
             </CardContent>
           </Card>
@@ -65,7 +65,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Ask: "What's the price of AAPL stock?"
+                Ask: "What's Microsoft's stock price?"
               </p>
             </CardContent>
           </Card>
