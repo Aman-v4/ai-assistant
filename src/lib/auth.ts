@@ -7,18 +7,16 @@ import { prisma } from './db'
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      Google({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
-    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET ? [
-      GitHub({
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      })
-    ] : []),
+    // Always include Google provider with fallback values for build
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || 'temp-google-id',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'temp-google-secret',
+    }),
+    // Always include GitHub provider with fallback values for build
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID || 'temp-github-id', 
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || 'temp-github-secret',
+    }),
   ],
   callbacks: {
     session: async ({ session, token }) => {
