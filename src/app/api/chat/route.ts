@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 
 async function getWeather(location: string) {
   try {
@@ -185,7 +184,20 @@ async function getF1NextRace() {
     const now = new Date()
     
     // Find the next race
-    const nextRace = races.find((race: any) => {
+    interface Race {
+      raceName: string;
+      date: string;
+      time?: string;
+      Circuit: {
+        circuitName: string;
+        Location: {
+          country: string;
+          locality: string;
+        };
+      };
+    }
+    
+    const nextRace = races.find((race: Race) => {
       const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`)
       return raceDate > now
     }) || races[races.length - 1]
@@ -204,23 +216,24 @@ async function getF1NextRace() {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await auth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
     return NextResponse.json({ message: 'Chat GET endpoint working' })
-  } catch (error) {
+  } catch (err) {
+    console.error('GET chat error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await auth()
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -303,8 +316,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: stockData.error })
       }
       
-      const changeText = stockData.change >= 0 ? '+' : ''
-      const changeColor = stockData.change >= 0 ? '🟢' : '🔴'
+      const changeText = (stockData.change || 0) >= 0 ? '+' : ''
+      const changeColor = (stockData.change || 0) >= 0 ? '🟢' : '🔴'
       
       return NextResponse.json({
         message: `📈 **${stockData.name} (${stockData.symbol})**\n` +

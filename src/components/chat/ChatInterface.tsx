@@ -9,13 +9,16 @@ import { WeatherCard } from '@/components/ui/tools/WeatherCard'
 import { F1Card } from '@/components/ui/tools/F1Card'
 import { StockCard } from '@/components/ui/tools/StockCard'
 import { useSession } from 'next-auth/react'
+import { WeatherData } from '@/lib/tools/weather'
+import { F1Race } from '@/lib/tools/f1'
+import { StockData } from '@/lib/tools/stock'
 
 interface Message {
   id: string
   role: 'user' | 'assistant' | 'tool'
   content: string
-  toolCalls?: any[]
-  toolData?: any
+  toolCalls?: Array<Record<string, unknown>>
+  toolData?: WeatherData | F1Race | StockData
   toolType?: string
 }
 
@@ -78,11 +81,11 @@ export function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
 
     switch (message.toolType) {
       case 'weather':
-        return <WeatherCard data={message.toolData} />
+        return <WeatherCard data={message.toolData as WeatherData} />
       case 'f1':
-        return <F1Card data={message.toolData} />
+        return <F1Card data={message.toolData as F1Race} />
       case 'stock':
-        return <StockCard data={message.toolData} />
+        return <StockCard data={message.toolData as StockData} />
       default:
         return null
     }

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { WeatherData } from "@/lib/tools/weather"
-import { Cloud, Droplets, Wind, Thermometer } from "lucide-react"
+import { Cloud, Droplets, Wind } from "lucide-react"
 
 interface WeatherCardProps {
   data: WeatherData

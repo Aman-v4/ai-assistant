@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 export default function ChatPage() {
   const { data: session, status } = useSession()
   const [message, setMessage] = useState('')
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Array<{role: string; content: string}>>([])
   const [loading, setLoading] = useState(false)
 
   if (status === 'loading') {
@@ -38,7 +38,8 @@ export default function ChatPage() {
       
       const data = await response.json()
       setMessages(prev => [...prev, { role: 'assistant', content: data.message || 'Response received' }])
-    } catch (error) {
+    } catch (err) {
+      console.error('Send message error:', err)
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error occurred' }])
     }
     
@@ -105,15 +106,15 @@ export default function ChatPage() {
       <div className="grid md:grid-cols-3 gap-4 mt-8">
         <div className="border rounded-lg p-4">
           <h3 className="font-semibold mb-2">🌤️ Weather</h3>
-          <p className="text-sm text-gray-600">Ask: "What's the weather in London?"</p>
+          <p className="text-sm text-gray-600">Ask: &quot;What&apos;s the weather in London?&quot;</p>
         </div>
         <div className="border rounded-lg p-4">
           <h3 className="font-semibold mb-2">🏎️ Formula 1</h3>
-          <p className="text-sm text-gray-600">Ask: "When is the next F1 race?"</p>
+          <p className="text-sm text-gray-600">Ask: &quot;When is the next F1 race?&quot;</p>
         </div>
         <div className="border rounded-lg p-4">
           <h3 className="font-semibold mb-2">📈 Stocks</h3>
-          <p className="text-sm text-gray-600">Ask: "What's Microsoft's stock price?"</p>
+          <p className="text-sm text-gray-600">Ask: &quot;What&apos;s Microsoft&apos;s stock price?&quot;</p>
         </div>
       </div>
     </div>
