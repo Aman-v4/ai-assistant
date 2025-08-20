@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 // GET /api/chats/[chatId] - Get a specific chat with all messages
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await auth()
@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const userId = (session.user as any).id
-    const { chatId } = params
+    const { chatId } = await params
 
     const chat = await prisma.chat.findFirst({
       where: {
@@ -44,7 +44,7 @@ export async function GET(
 // DELETE /api/chats/[chatId] - Delete a chat
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await auth()
@@ -53,7 +53,7 @@ export async function DELETE(
     }
 
     const userId = (session.user as any).id
-    const { chatId } = params
+    const { chatId } = await params
 
     // Verify the chat belongs to the user
     const chat = await prisma.chat.findFirst({

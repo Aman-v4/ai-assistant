@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // GET /api/chats - Get all chats for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) {
@@ -42,7 +42,7 @@ export async function GET() {
 }
 
 // POST /api/chats - Create a new chat
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = (session.user as any).id
-    const { title } = await req.json()
+    const { title } = await request.json()
 
     const chat = await prisma.chat.create({
       data: {

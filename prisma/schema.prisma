@@ -53,6 +53,9 @@ model Chat {
   updatedAt DateTime   @updatedAt
   messages  Message[]
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([userId, updatedAt])
 }
 
 model Message {
@@ -63,4 +66,7 @@ model Message {
   toolCalls Json?
   createdAt DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  @@index([chatId])
+  @@index([chatId, createdAt])
 }

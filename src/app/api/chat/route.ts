@@ -493,21 +493,21 @@ async function getF1NextRace() {
         const races = data.MRData?.RaceTable?.Races
         
         if (races && races.length > 0) {
-          const now = new Date()
-          
-          const nextRace = races.find((race: any) => {
-            const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`)
-            return raceDate > now
-          }) || races[races.length - 1]
-          
-          return {
-            raceName: nextRace.raceName,
-            circuitName: nextRace.Circuit.circuitName,
-            date: nextRace.date,
-            time: nextRace.time || 'TBA',
-            country: nextRace.Circuit.Location.country,
-            locality: nextRace.Circuit.Location.locality,
-          }
+    const now = new Date()
+    
+    const nextRace = races.find((race: any) => {
+      const raceDate = new Date(`${race.date}T${race.time || '00:00:00'}`)
+      return raceDate > now
+    }) || races[races.length - 1]
+    
+    return {
+      raceName: nextRace.raceName,
+      circuitName: nextRace.Circuit.circuitName,
+      date: nextRace.date,
+      time: nextRace.time || 'TBA',
+      country: nextRace.Circuit.Location.country,
+      locality: nextRace.Circuit.Location.locality,
+    }
         }
       }
     } catch (jolpicaError) {
@@ -544,25 +544,49 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, chatId } = await req.json()
+    const { message, chatId } = await request.json()
     console.log('Received message:', message, 'Chat ID:', chatId)
     
     const userId = (session.user as any).id
     let currentChatId = chatId
 
-    // Create new chat if no chatId provided
-    if (!currentChatId) {
+    // Validate and sanitize input
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+    }
+    
+    if (message.length > 4000) {
+      return NextResponse.json({ error: 'Message too long. Maximum 4000 characters.' }, { status: 400 })
+    }
+    
+    // Sanitize message to prevent potential injection attacks
+    const sanitizedMessage = message.trim()
+
+    // If chatId is provided, verify it belongs to the user
+    if (currentChatId) {
+      const existingChat = await prisma.chat.findFirst({
+        where: {
+          id: currentChatId,
+          userId: userId
+        }
+      })
+      
+      if (!existingChat) {
+        return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 404 })
+      }
+    } else {
+      // Create new chat if no chatId provided
       const newChat = await prisma.chat.create({
         data: {
           userId: userId,
-          title: message.slice(0, 50) + (message.length > 50 ? '...' : ''), // Use first 50 chars as title
+          title: sanitizedMessage.slice(0, 50) + (sanitizedMessage.length > 50 ? '...' : ''), // Use first 50 chars as title
         }
       })
       currentChatId = newChat.id
@@ -574,21 +598,33 @@ export async function POST(req: NextRequest) {
       data: {
         chatId: currentChatId,
         role: 'user',
-        content: message,
+        content: sanitizedMessage,
       }
     })
     console.log('Saved user message:', userMessage.id)
 
     // Check if message is asking for weather
-    if (message.toLowerCase().includes('weather')) {
-      const locationMatch = message.match(/weather.*?in\s+(\w+)/i)
+    if (sanitizedMessage.toLowerCase().includes('weather')) {
+      const locationMatch = sanitizedMessage.match(/weather.*?in\s+(\w+)/i)
       const location = locationMatch ? locationMatch[1] : 'London'
       
       console.log('Getting weather for:', location)
       const weatherData = await getWeather(location)
       
       if (weatherData.error) {
-        return NextResponse.json({ message: weatherData.error })
+        // Save error response
+        await prisma.message.create({
+          data: {
+            chatId: currentChatId,
+            role: 'assistant',
+            content: weatherData.error,
+          }
+        })
+        
+        return NextResponse.json({ 
+          message: weatherData.error,
+          chatId: currentChatId 
+        })
       }
       
       const responseText = `🌤️ **Weather in ${weatherData.location}:**\n` +
@@ -615,12 +651,24 @@ export async function POST(req: NextRequest) {
     }
     
     // Check if message is asking for F1 information
-    if (message.toLowerCase().includes('f1') || message.toLowerCase().includes('formula') || message.toLowerCase().includes('race')) {
+    if (sanitizedMessage.toLowerCase().includes('f1') || sanitizedMessage.toLowerCase().includes('formula') || sanitizedMessage.toLowerCase().includes('race')) {
       console.log('Getting F1 race information')
       const f1Data = await getF1NextRace()
       
       if (f1Data.error) {
-        return NextResponse.json({ message: f1Data.error })
+        // Save error response
+        await prisma.message.create({
+          data: {
+            chatId: currentChatId,
+            role: 'assistant',
+            content: f1Data.error,
+          }
+        })
+        
+        return NextResponse.json({ 
+          message: f1Data.error,
+          chatId: currentChatId 
+        })
       }
       
       const responseText = `🏎️ **Next Formula 1 Race:**\n` +
@@ -647,7 +695,7 @@ export async function POST(req: NextRequest) {
     }
     
     // Check if message is asking for stock price
-    if (message.toLowerCase().includes('stock') || message.toLowerCase().includes('price')) {
+    if (sanitizedMessage.toLowerCase().includes('stock') || sanitizedMessage.toLowerCase().includes('price')) {
       // Extract company name more accurately
       let symbol = ''
       
@@ -661,7 +709,7 @@ export async function POST(req: NextRequest) {
       ]
       
       for (const pattern of patterns) {
-        const match = message.match(pattern)
+        const match = sanitizedMessage.match(pattern)
         if (match && match[1]) {
           symbol = match[1].trim()
           break
@@ -670,7 +718,7 @@ export async function POST(req: NextRequest) {
       
       if (!symbol) {
         // Fallback extraction
-        symbol = message.replace(/what'?s|stock|price|the|of/gi, '').trim()
+        symbol = sanitizedMessage.replace(/what'?s|stock|price|the|of/gi, '').trim()
       }
       
       console.log('Extracted symbol:', symbol)
@@ -678,7 +726,19 @@ export async function POST(req: NextRequest) {
       const stockData = await getStockPrice(symbol)
       
       if (stockData.error) {
-        return NextResponse.json({ message: stockData.error })
+        // Save error response
+        await prisma.message.create({
+          data: {
+            chatId: currentChatId,
+            role: 'assistant',
+            content: stockData.error,
+          }
+        })
+        
+        return NextResponse.json({ 
+          message: stockData.error,
+          chatId: currentChatId 
+        })
       }
       
       const changeText = (stockData.change || 0) >= 0 ? '+' : ''
@@ -728,8 +788,13 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Chat API error:', error)
+    
+    // Don't expose internal error details to client
     return NextResponse.json(
-      { message: 'Sorry, I encountered an error. Please try again.' },
+      { 
+        error: 'Internal server error. Please try again later.',
+        message: 'Sorry, I encountered an error. Please try again.'
+      },
       { status: 500 }
     )
   }

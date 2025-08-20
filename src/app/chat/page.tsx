@@ -1,9 +1,11 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Trash2, MessageCircle, Plus } from 'lucide-react'
+import { Trash2, MessageCircle, Plus, LogOut } from 'lucide-react'
+import InfoModal from '@/components/ui/InfoModal'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: string
@@ -23,12 +25,14 @@ interface Chat {
 
 export default function ChatPage() {
   const { data: session, status } = useSession()
+  const router = useRouter()
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(false)
   const [chats, setChats] = useState<Chat[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [loadingChats, setLoadingChats] = useState(true)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const loadChatMessages = useCallback(async (chatId: string) => {
     try {
@@ -45,30 +49,58 @@ export default function ChatPage() {
   const loadChats = useCallback(async () => {
     try {
       const response = await fetch('/api/chats')
-      if (response.ok) {
-        const chatsData = await response.json()
-        console.log('Loaded chats:', chatsData) // Debug log
-        
-        // Ensure each chat has proper structure
-        const normalizedChats = chatsData.map((chat: any) => ({
-          ...chat,
-          _count: chat._count || { messages: 0 }
-        }))
-        
-        setChats(normalizedChats)
-        if (normalizedChats.length > 0 && !currentChatId) {
-          setCurrentChatId(normalizedChats[0].id)
-          loadChatMessages(normalizedChats[0].id)
-        }
-      } else {
-        console.error('Failed to load chats:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load chats: HTTP ${response.status}`)
+      }
+      
+      const chatsData = await response.json()
+      console.log('Loaded chats:', chatsData) // Debug log
+      
+      // Ensure each chat has proper structure
+      const normalizedChats = chatsData.map((chat: any) => ({
+        ...chat,
+        _count: chat._count || { messages: 0 }
+      }))
+      
+      setChats(normalizedChats)
+      if (normalizedChats.length > 0 && !currentChatId) {
+        setCurrentChatId(normalizedChats[0].id)
+        loadChatMessages(normalizedChats[0].id)
       }
     } catch (error) {
       console.error('Error loading chats:', error)
+      // You might want to show a toast notification here
     } finally {
       setLoadingChats(false)
     }
   }, [currentChatId, loadChatMessages])
+
+  // Redirect unauthenticated users - must be called before conditional returns
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/')
+    }
+  }, [status, router])
+
+  // Load chats on component mount
+  useEffect(() => {
+    if (session?.user) {
+      loadChats()
+    }
+  }, [session, loadChats])
+
+  // Handle prompt selection from InfoModal
+  const handlePromptSelect = useCallback((prompt: string) => {
+    setMessage(prompt)
+    // Use requestAnimationFrame for better timing with React updates
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+        inputRef.current.setSelectionRange(prompt.length, prompt.length)
+      }
+    })
+  }, [])
 
   const createNewChat = async () => {
     try {
@@ -78,21 +110,21 @@ export default function ChatPage() {
         body: JSON.stringify({ title: 'New Chat' })
       })
       
-      if (response.ok) {
-        const newChat = await response.json()
-        // Ensure the new chat has proper structure
-        const normalizedNewChat = {
-          ...newChat,
-          _count: newChat._count || { messages: 0 },
-          messages: newChat.messages || []
-        }
-        
-        setChats(prev => [normalizedNewChat, ...prev])
-        setCurrentChatId(normalizedNewChat.id)
-        setMessages([])
-      } else {
-        console.error('Failed to create new chat:', response.status, response.statusText)
+      if (!response.ok) {
+        throw new Error(`Failed to create new chat: HTTP ${response.status}`)
       }
+      
+      const newChat = await response.json()
+      // Ensure the new chat has proper structure
+      const normalizedNewChat = {
+        ...newChat,
+        _count: newChat._count || { messages: 0 },
+        messages: newChat.messages || []
+      }
+      
+      setChats(prev => [normalizedNewChat, ...prev])
+      setCurrentChatId(normalizedNewChat.id)
+      setMessages([])
     } catch (error) {
       console.error('Error creating new chat:', error)
     }
@@ -104,17 +136,19 @@ export default function ChatPage() {
         method: 'DELETE'
       })
       
-      if (response.ok) {
-        setChats(prev => prev.filter(chat => chat.id !== chatId))
-        if (currentChatId === chatId) {
-          const remainingChats = chats.filter(chat => chat.id !== chatId)
-          if (remainingChats.length > 0) {
-            setCurrentChatId(remainingChats[0].id)
-            loadChatMessages(remainingChats[0].id)
-          } else {
-            setCurrentChatId(null)
-            setMessages([])
-          }
+      if (!response.ok) {
+        throw new Error(`Failed to delete chat: HTTP ${response.status}`)
+      }
+      
+      setChats(prev => prev.filter(chat => chat.id !== chatId))
+      if (currentChatId === chatId) {
+        const remainingChats = chats.filter(chat => chat.id !== chatId)
+        if (remainingChats.length > 0) {
+          setCurrentChatId(remainingChats[0].id)
+          loadChatMessages(remainingChats[0].id)
+        } else {
+          setCurrentChatId(null)
+          setMessages([])
         }
       }
     } catch (error) {
@@ -128,7 +162,6 @@ export default function ChatPage() {
   }
 
   if (!session) {
-    window.location.href = '/'
     return null
   }
 
@@ -157,6 +190,12 @@ export default function ChatPage() {
       })
       
       const data = await response.json()
+      
+      // Check if the response was successful
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const assistantMessage = {
         id: Date.now().toString() + 1,
         role: 'assistant',
@@ -188,13 +227,6 @@ export default function ChatPage() {
     setLoading(false)
   }
 
-  // Load chats on component mount
-  useEffect(() => {
-    if (session?.user) {
-      loadChats()
-    }
-  }, [session, loadChats])
-
   // Early returns for loading and auth states
   if (status !== 'authenticated') {
     if (status === 'loading') {
@@ -205,10 +237,7 @@ export default function ChatPage() {
       )
     }
     
-    // Status is 'unauthenticated'
-    if (typeof window !== 'undefined') {
-      window.location.href = '/'
-    }
+    // Status is 'unauthenticated' - will redirect via useEffect
     return null
   }
 
@@ -290,11 +319,25 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b p-4 bg-white">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            <h1 className="text-xl font-semibold">
-              {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'Chat' : 'AI Assistant'}
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              <h1 className="text-xl font-semibold">
+                {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'Chat' : 'AI Assistant'}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <InfoModal onPromptSelect={handlePromptSelect} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut()}
+                className="h-8"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -303,8 +346,17 @@ export default function ChatPage() {
           {messages.length === 0 ? (
             <div className="text-center py-12">
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">Start a conversation!</p>
-              <p className="text-gray-400 text-sm">Ask about weather, stock prices, or F1 races</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to AI Assistant!</h3>
+              <p className="text-gray-500 mb-4">Start a conversation by typing a message below.</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                <span>💡 Need examples? Click the</span>
+                <div className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                  </svg>
+                </div>
+                <span>button above!</span>
+              </div>
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
@@ -341,6 +393,7 @@ export default function ChatPage() {
           <div className="max-w-4xl mx-auto">
             <div className="flex gap-3">
               <input
+                ref={inputRef}
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -354,32 +407,7 @@ export default function ChatPage() {
               </Button>
             </div>
             
-            {/* Feature hints */}
-            {messages.length === 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-4">
-                <button 
-                  className="text-left p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
-                  onClick={() => setMessage("What's the weather in London?")}
-                >
-                  <div className="text-sm font-medium">🌤️ Weather</div>
-                  <div className="text-xs text-gray-500">Get current weather</div>
-                </button>
-                <button 
-                  className="text-left p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
-                  onClick={() => setMessage("When is the next F1 race?")}
-                >
-                  <div className="text-sm font-medium">🏎️ Formula 1</div>
-                  <div className="text-xs text-gray-500">Race schedule</div>
-                </button>
-                <button 
-                  className="text-left p-3 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-colors"
-                  onClick={() => setMessage("What's Microsoft stock price?")}
-                >
-                  <div className="text-sm font-medium">📈 Stocks</div>
-                  <div className="text-xs text-gray-500">Live stock prices</div>
-                </button>
-              </div>
-            )}
+
           </div>
         </div>
       </div>
