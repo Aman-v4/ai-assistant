@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// GET /api/chats/[chatId] - Get a specific chat with all messages
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
@@ -19,7 +18,7 @@ export async function GET(
     const chat = await prisma.chat.findFirst({
       where: {
         id: chatId,
-        userId: userId // Ensure user can only access their own chats
+        userId: userId 
       },
       include: {
         messages: {
@@ -41,7 +40,6 @@ export async function GET(
   }
 }
 
-// DELETE /api/chats/[chatId] - Delete a chat
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ chatId: string }> }
@@ -55,7 +53,7 @@ export async function DELETE(
     const userId = (session.user as any).id
     const { chatId } = await params
 
-    // Verify the chat belongs to the user
+   
     const chat = await prisma.chat.findFirst({
       where: {
         id: chatId,
@@ -66,8 +64,6 @@ export async function DELETE(
     if (!chat) {
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
     }
-
-    // Delete the chat (messages will be deleted due to cascade)
     await prisma.chat.delete({
       where: {
         id: chatId

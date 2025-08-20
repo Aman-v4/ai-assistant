@@ -11,7 +11,6 @@ export default function Home() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  // All hooks must be called before any conditional returns
   useEffect(() => {
     if (session) {
       router.push('/chat')

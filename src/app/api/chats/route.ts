@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// GET /api/chats - Get all chats for the current user
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
           orderBy: {
             createdAt: 'asc'
           },
-          take: 1 // Just get the first message for preview
+          take: 1 
         },
         _count: {
           select: {
@@ -41,7 +40,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/chats - Create a new chat
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()

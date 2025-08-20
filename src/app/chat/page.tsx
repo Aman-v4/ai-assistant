@@ -55,9 +55,7 @@ export default function ChatPage() {
       }
       
       const chatsData = await response.json()
-      console.log('Loaded chats:', chatsData) // Debug log
-      
-      // Ensure each chat has proper structure
+      console.log('Loaded chats:', chatsData) 
       const normalizedChats = chatsData.map((chat: any) => ({
         ...chat,
         _count: chat._count || { messages: 0 }
@@ -70,30 +68,25 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Error loading chats:', error)
-      // You might want to show a toast notification here
     } finally {
       setLoadingChats(false)
     }
   }, [currentChatId, loadChatMessages])
 
-  // Redirect unauthenticated users - must be called before conditional returns
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/')
     }
   }, [status, router])
 
-  // Load chats on component mount
   useEffect(() => {
     if (session?.user) {
       loadChats()
     }
   }, [session, loadChats])
 
-  // Handle prompt selection from InfoModal
   const handlePromptSelect = useCallback((prompt: string) => {
     setMessage(prompt)
-    // Use requestAnimationFrame for better timing with React updates
     requestAnimationFrame(() => {
       if (inputRef.current) {
         inputRef.current.focus()
@@ -115,7 +108,6 @@ export default function ChatPage() {
       }
       
       const newChat = await response.json()
-      // Ensure the new chat has proper structure
       const normalizedNewChat = {
         ...newChat,
         _count: newChat._count || { messages: 0 },
@@ -191,7 +183,6 @@ export default function ChatPage() {
       
       const data = await response.json()
       
-      // Check if the response was successful
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
       }
@@ -204,12 +195,10 @@ export default function ChatPage() {
       }
       setMessages(prev => [...prev, assistantMessage])
       
-      // Update current chat ID if it was a new chat
       if (data.chatId && !currentChatId) {
         setCurrentChatId(data.chatId)
       }
       
-      // Always refresh chat list to update message counts
       if (data.chatId) {
         loadChats()
       }
@@ -227,7 +216,6 @@ export default function ChatPage() {
     setLoading(false)
   }
 
-  // Early returns for loading and auth states
   if (status !== 'authenticated') {
     if (status === 'loading') {
       return (
@@ -237,7 +225,6 @@ export default function ChatPage() {
       )
     }
     
-    // Status is 'unauthenticated' - will redirect via useEffect
     return null
   }
 
@@ -250,7 +237,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar - Chat History */}
       <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Chat History</h2>
@@ -315,9 +301,7 @@ export default function ChatPage() {
         </div> */}
       </div>
 
-      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <div className="border-b p-4 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -341,7 +325,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat Messages */}
         <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
           {messages.length === 0 ? (
             <div className="text-center py-12">
@@ -388,7 +371,6 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Message Input */}
         <div className="border-t p-4 bg-white">
           <div className="max-w-4xl mx-auto">
             <div className="flex gap-3">

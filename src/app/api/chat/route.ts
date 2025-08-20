@@ -29,10 +29,8 @@ async function getWeather(location: string) {
   }
 }
 
-// Simple in-memory cache for symbol searches (resets on server restart)
 const symbolCache = new Map<string, string>()
 
-// Universal dynamic stock symbol search using multiple APIs
 async function searchStockSymbol(companyName: string): Promise<string | null> {
   // Check cache first
   const cacheKey = companyName.toLowerCase().trim()
@@ -43,7 +41,6 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
 
   console.log(`Searching for symbol: "${companyName}"`)
 
-  // Try Twelve Data symbol search first (if available)
   if (process.env.TWELVE_DATA_API_KEY && process.env.TWELVE_DATA_API_KEY !== 'your_twelve_data_api_key_here') {
     try {
       console.log('Trying Twelve Data symbol search...')
@@ -56,7 +53,7 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
         console.log('Twelve Data search response:', searchData)
 
         if (searchData.data && searchData.data.length > 0) {
-          // Find the best match
+       
           let bestSymbol = null
           let bestScore = 0
 
@@ -66,20 +63,16 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
             const country = match.country
             const exchange = match.exchange
             
-            // Calculate relevance score
             let score = 0.5
             
-            // Boost for name similarity
             if (name.includes(companyName.toLowerCase()) || companyName.toLowerCase().includes(name)) {
               score += 0.4
             }
             
-            // Prefer major exchanges
             if (['NASDAQ', 'NYSE', 'NSE', 'BSE'].includes(exchange)) {
               score += 0.2
             }
             
-            // Region preferences
             if (country === 'India' && ['tcs', 'reliance', 'infosys', 'wipro', 'bajaj', 'adani', 'hdfc', 'icici', 'sbi'].some(term => 
                 companyName.toLowerCase().includes(term))) {
               score += 0.3
@@ -109,7 +102,6 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
     }
   }
 
-  // Try Alpha Vantage symbol search (if available)
   if (process.env.ALPHA_VANTAGE_API_KEY && process.env.ALPHA_VANTAGE_API_KEY !== 'your_actual_alpha_vantage_api_key_here') {
     try {
       console.log('Trying Alpha Vantage symbol search...')
@@ -137,7 +129,6 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
     }
   }
 
-  // Try Yahoo Finance search as fallback (no API key needed)
   try {
     console.log('Trying Yahoo Finance symbol search...')
     // Yahoo Finance search endpoint
@@ -155,12 +146,10 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
       console.log('Yahoo Finance search response:', searchData)
 
       if (searchData.quotes && searchData.quotes.length > 0) {
-        // Find best match
         for (const quote of searchData.quotes) {
           const symbol = quote.symbol
           const name = quote.longname || quote.shortname || ''
           
-          // Prefer exact matches or high relevance
           if (name.toLowerCase().includes(companyName.toLowerCase()) || 
               companyName.toLowerCase().includes(name.toLowerCase())) {
             console.log(`Yahoo Finance found symbol: ${symbol}`)
@@ -169,7 +158,6 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
           }
         }
         
-        // If no exact match, take the first result if it's reasonable
         const firstResult = searchData.quotes[0]
         if (firstResult && firstResult.symbol) {
           console.log(`Yahoo Finance found symbol (first result): ${firstResult.symbol}`)
@@ -186,20 +174,17 @@ async function searchStockSymbol(companyName: string): Promise<string | null> {
   return null
 }
 
-// Simple company name processing - no hardcoding!
 function processCompanyName(input: string): string[] {
   const cleaned = input
     .replace(/stock|price|'s|what's|what|is|the|of|share/gi, '')
     .trim()
   
-  // Return multiple search variations to improve matching
   const variations = [
-    cleaned,                                    // Exact input
-    cleaned.replace(/\s+/g, ' '),              // Normalized spaces
-    cleaned.toLowerCase(),                      // Lowercase
+    cleaned,                                   
+    cleaned.replace(/\s+/g, ' '),              
+    cleaned.toLowerCase(),                     
   ]
   
-  // Add common corporate suffixes to improve search
   const withSuffixes = [
     cleaned + ' Inc',
     cleaned + ' Corporation', 
@@ -215,13 +200,11 @@ async function getStockPrice(symbol: string) {
   try {
     console.log(`Original input: "${symbol}"`)
     
-    // Process company name and get variations
     const companyVariations = processCompanyName(symbol)
     console.log(`Company variations: ${companyVariations.join(', ')}`)
     
     let tickerSymbol = companyVariations[0].toUpperCase()
     
-    // Try to find the symbol using dynamic search with each variation
     for (const variation of companyVariations) {
       const foundSymbol = await searchStockSymbol(variation)
       if (foundSymbol) {
@@ -235,7 +218,6 @@ async function getStockPrice(symbol: string) {
       console.log(`No symbol found via search, using direct input: ${tickerSymbol}`)
     }
     
-    // PRIORITY 1: Twelve Data API (Free 800 requests/day, supports NSE/BSE + international)
     if (process.env.TWELVE_DATA_API_KEY && process.env.TWELVE_DATA_API_KEY !== 'your_twelve_data_api_key_here') {
       try {
         console.log('Trying Twelve Data API...')
@@ -273,11 +255,9 @@ async function getStockPrice(symbol: string) {
       console.log('Twelve Data API key not configured')
     }
 
-    // PRIORITY 2: Polygon.io (Free 1000 requests/day, excellent for US stocks)
     if (process.env.POLYGON_API_KEY && process.env.POLYGON_API_KEY !== 'your_polygon_api_key_here') {
       try {
         console.log('Trying Polygon.io API...')
-        // Get previous business day for comparison
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
         const dateStr = yesterday.toISOString().split('T')[0]
@@ -314,7 +294,6 @@ async function getStockPrice(symbol: string) {
       console.log('Polygon API key not configured')
     }
 
-    // PRIORITY 3: Finnhub (Free 60 calls/minute, good global coverage)
     try {
       console.log('Trying Finnhub API...')
       const finnhubApiKey = process.env.FINNHUB_API_KEY || 'demo'
@@ -345,7 +324,6 @@ async function getStockPrice(symbol: string) {
       console.log('Finnhub failed:', finnhubError)
     }
 
-    // PRIORITY 4: Alpha Vantage (Your API with real key - keeping as backup)
     if (process.env.ALPHA_VANTAGE_API_KEY && process.env.ALPHA_VANTAGE_API_KEY !== 'your-alpha-vantage-api-key' && process.env.ALPHA_VANTAGE_API_KEY !== 'your_actual_alpha_vantage_api_key_here') {
       try {
         console.log('Trying Alpha Vantage API...')
@@ -357,7 +335,6 @@ async function getStockPrice(symbol: string) {
           const avData = await avResponse.json()
           console.log('Alpha Vantage response:', avData)
           
-          // Check for API limit reached
           if (avData['Note'] && avData['Note'].includes('API call frequency')) {
             console.log('Alpha Vantage API limit reached')
           } else if (avData['Error Message']) {
@@ -388,7 +365,6 @@ async function getStockPrice(symbol: string) {
       console.log('Alpha Vantage API key not configured properly')
     }
     
-    // PRIORITY 5: Yahoo Finance API (Reliable fallback for both Indian and international)
     try {
       console.log('Trying Yahoo Finance API...')
       const yahooResponse = await fetch(
@@ -439,7 +415,6 @@ async function getF1NextRace() {
   try {
     console.log('Fetching F1 race data...')
     
-    // Try OpenF1 API first (free and currently working)
     try {
       const sessionsResponse = await fetch('https://api.openf1.org/v1/sessions?session_type=Race&year=2024', {
         headers: {
@@ -454,7 +429,6 @@ async function getF1NextRace() {
         if (sessions && sessions.length > 0) {
           const now = new Date()
           
-          // Find the next race or the latest one
           const nextSession = sessions.find((session: any) => {
             const sessionDate = new Date(session.date_start)
             return sessionDate > now
@@ -480,7 +454,6 @@ async function getF1NextRace() {
       console.log('OpenF1 API failed:', openF1Error)
     }
     
-    // Fallback: Try F1 Live API
     try {
       const f1LiveResponse = await fetch('https://api.jolpi.ca/ergast/f1/current.json', {
         headers: {
@@ -514,7 +487,6 @@ async function getF1NextRace() {
       console.log('Jolpica API failed:', jolpicaError)
     }
     
-    // Last resort: Return static info about current F1 season
     return {
       raceName: 'Formula 1 Race Weekend',
       circuitName: 'Check F1 Official Website',
@@ -557,7 +529,6 @@ export async function POST(request: NextRequest) {
     const userId = (session.user as any).id
     let currentChatId = chatId
 
-    // Validate and sanitize input
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
@@ -566,10 +537,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message too long. Maximum 4000 characters.' }, { status: 400 })
     }
     
-    // Sanitize message to prevent potential injection attacks
     const sanitizedMessage = message.trim()
 
-    // If chatId is provided, verify it belongs to the user
     if (currentChatId) {
       const existingChat = await prisma.chat.findFirst({
         where: {
@@ -582,7 +551,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 404 })
       }
     } else {
-      // Create new chat if no chatId provided
       const newChat = await prisma.chat.create({
         data: {
           userId: userId,
@@ -593,7 +561,6 @@ export async function POST(request: NextRequest) {
       console.log('Created new chat:', currentChatId)
     }
 
-    // Save user message
     const userMessage = await prisma.message.create({
       data: {
         chatId: currentChatId,
@@ -603,7 +570,6 @@ export async function POST(request: NextRequest) {
     })
     console.log('Saved user message:', userMessage.id)
 
-    // Check if message is asking for weather
     if (sanitizedMessage.toLowerCase().includes('weather')) {
       const locationMatch = sanitizedMessage.match(/weather.*?in\s+(\w+)/i)
       const location = locationMatch ? locationMatch[1] : 'London'
@@ -612,7 +578,6 @@ export async function POST(request: NextRequest) {
       const weatherData = await getWeather(location)
       
       if (weatherData.error) {
-        // Save error response
         await prisma.message.create({
           data: {
             chatId: currentChatId,
@@ -634,7 +599,7 @@ export async function POST(request: NextRequest) {
                 `💨 Wind Speed: ${weatherData.windSpeed} m/s\n` +
                 `👁️ Visibility: ${weatherData.visibility} km`
       
-      // Save assistant response
+      
       await prisma.message.create({
         data: {
           chatId: currentChatId,
@@ -650,13 +615,12 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Check if message is asking for F1 information
     if (sanitizedMessage.toLowerCase().includes('f1') || sanitizedMessage.toLowerCase().includes('formula') || sanitizedMessage.toLowerCase().includes('race')) {
       console.log('Getting F1 race information')
       const f1Data = await getF1NextRace()
       
       if (f1Data.error) {
-        // Save error response
+        
         await prisma.message.create({
           data: {
             chatId: currentChatId,
@@ -678,7 +642,7 @@ export async function POST(request: NextRequest) {
                 `📅 **Date:** ${new Date(f1Data.date).toLocaleDateString()}\n` +
                 `⏰ **Time:** ${f1Data.time === 'TBA' ? 'TBA' : f1Data.time}`
       
-      // Save assistant response
+      
       await prisma.message.create({
         data: {
           chatId: currentChatId,
@@ -694,12 +658,9 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Check if message is asking for stock price
     if (sanitizedMessage.toLowerCase().includes('stock') || sanitizedMessage.toLowerCase().includes('price')) {
-      // Extract company name more accurately
       let symbol = ''
       
-      // Try different patterns
       const patterns = [
         /what'?s\s+([^'s]+?)(?:'s)?\s+stock/i,
         /([a-zA-Z\s]+?)\s+stock\s+price/i,
@@ -717,7 +678,6 @@ export async function POST(request: NextRequest) {
       }
       
       if (!symbol) {
-        // Fallback extraction
         symbol = sanitizedMessage.replace(/what'?s|stock|price|the|of/gi, '').trim()
       }
       
@@ -726,7 +686,6 @@ export async function POST(request: NextRequest) {
       const stockData = await getStockPrice(symbol)
       
       if (stockData.error) {
-        // Save error response
         await prisma.message.create({
           data: {
             chatId: currentChatId,
@@ -749,7 +708,6 @@ export async function POST(request: NextRequest) {
                 `${changeColor} **Change:** ${changeText}${stockData.change} (${changeText}${stockData.changePercent}%)\n` +
                 `🕒 **Last Updated:** ${new Date().toLocaleString()}`
       
-      // Save assistant response
       await prisma.message.create({
         data: {
           chatId: currentChatId,
@@ -765,14 +723,12 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Default response for other messages
     const defaultResponse = "I can help you with:\n" +
                "🌤️ **Weather** - try 'What's the weather in London?'\n" +
                "📈 **Stock prices** - try 'What's Microsoft stock price?'\n" +
                "🏎️ **F1 races** - try 'When is the next F1 race?'\n" +
                "\nWhat would you like to know?"
     
-    // Save assistant response
     await prisma.message.create({
       data: {
         chatId: currentChatId,
@@ -789,7 +745,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Chat API error:', error)
     
-    // Don't expose internal error details to client
     return NextResponse.json(
       { 
         error: 'Internal server error. Please try again later.',
