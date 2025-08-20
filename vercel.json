@@ -1,13 +1,9 @@
 {
-  "buildCommand": "prisma generate && next build",
-  "installCommand": "npm install",
   "framework": "nextjs",
+  "buildCommand": "npm run vercel-build",
   "functions": {
     "app/api/**": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "SKIP_ENV_VALIDATION": "1"
   }
 }
