@@ -12,23 +12,23 @@ interface InfoModalProps {
 export default function InfoModal({ onPromptSelect }: InfoModalProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  // const examplePrompts = [
-  //   {
-  //     title: "Weather Information",
-  //     description: "Get current weather for any location",
-  //     example: "What's the weather in New York?"
-  //   },
-  //   {
-  //     title: "Formula 1 Races", 
-  //     description: "Get information about upcoming F1 races",
-  //     example: "When is the next F1 race?"
-  //   },
-  //   {
-  //     title: "Stock Prices",
-  //     description: "Get real-time stock information", 
-  //     example: "What's Microsoft's stock price?"
-  //   }
-  // ]
+  const examplePrompts = [
+    {
+      title: "Weather Information",
+      description: "Get current weather for any location",
+      example: "What's the weather in New York?"
+    },
+    {
+      title: "Formula 1 Races", 
+      description: "Get information about upcoming F1 races",
+      example: "When is the next F1 race?"
+    },
+    {
+      title: "Stock Prices",
+      description: "Get real-time stock information", 
+      example: "What's Microsoft's stock price?"
+    }
+  ]
 
   const handlePromptClick = (prompt: string) => {
     if (onPromptSelect) {
@@ -40,7 +40,7 @@ export default function InfoModal({ onPromptSelect }: InfoModalProps) {
   return (
     <>
       {/* Info Button */}
-      {/* <Button
+      <Button
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
@@ -48,10 +48,10 @@ export default function InfoModal({ onPromptSelect }: InfoModalProps) {
         title="Show example prompts"
       >
         <Info className="h-4 w-4" />
-      </Button> */}
+      </Button>
 
       {/* Modal Overlay */}
-      {/* {isOpen && (
+      {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
@@ -107,7 +107,7 @@ export default function InfoModal({ onPromptSelect }: InfoModalProps) {
             </div>
           </div>
         </div>
-      )} */}
+      )}
     </>
   )
 }

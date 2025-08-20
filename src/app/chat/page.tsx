@@ -92,14 +92,12 @@ export default function ChatPage() {
 
   // Handle prompt selection from InfoModal
   const handlePromptSelect = useCallback((prompt: string) => {
-    console.log('Setting message from info modal:', prompt)
     setMessage(prompt)
     // Use requestAnimationFrame for better timing with React updates
     requestAnimationFrame(() => {
       if (inputRef.current) {
         inputRef.current.focus()
         inputRef.current.setSelectionRange(prompt.length, prompt.length)
-        console.log('Input focused with message:', inputRef.current.value)
       }
     })
   }, [])
@@ -168,7 +166,6 @@ export default function ChatPage() {
   }
 
   const sendMessage = async () => {
-    console.log('sendMessage called with:', message)
     if (!message.trim() || loading) return
 
     setLoading(true)
@@ -351,7 +348,7 @@ export default function ChatPage() {
               <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to AI Assistant!</h3>
               <p className="text-gray-500 mb-4">Start a conversation by typing a message below.</p>
-              {/* <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
                 <span>💡 Need examples? Click the</span>
                 <div className="inline-flex items-center justify-center w-6 h-6 border border-gray-300 rounded bg-white">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -359,7 +356,7 @@ export default function ChatPage() {
                   </svg>
                 </div>
                 <span>button above!</span>
-              </div> */}
+              </div>
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
