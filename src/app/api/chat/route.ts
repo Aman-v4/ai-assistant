@@ -620,8 +620,8 @@ export async function POST(request: NextRequest) {
             content: weatherData.error,
           }
         })
-        
-        return NextResponse.json({ 
+      
+      return NextResponse.json({
           message: weatherData.error,
           chatId: currentChatId 
         })
@@ -664,8 +664,8 @@ export async function POST(request: NextRequest) {
             content: f1Data.error,
           }
         })
-        
-        return NextResponse.json({ 
+      
+      return NextResponse.json({
           message: f1Data.error,
           chatId: currentChatId 
         })
